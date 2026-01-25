@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   homeserver:
     driver: bridge
@@ -13,7 +11,11 @@ services:
     container_name: immich_server
     command: ["start.sh", "immich"]
     env_file:
-      - immich.env
+      - secrets.env
+    environment:
+      DB_USERNAME: ${IMMICH_DB_USER}
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD}
+      DB_DATABASE_NAME: ${IMMICH_DB_NAME}
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     ports:
@@ -34,7 +36,11 @@ services:
     container_name: immich_microservices
     command: ["start.sh", "microservices"]
     env_file:
-      - immich.env
+      - secrets.env
+    environment:
+      DB_USERNAME: ${IMMICH_DB_USER}
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD}
+      DB_DATABASE_NAME: ${IMMICH_DB_NAME}
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     depends_on:
@@ -59,7 +65,11 @@ services:
     image: postgres:14
     container_name: immich_postgres
     env_file:
-      - immich.env
+      - secrets.env
+    environment:
+      POSTGRES_USER: ${IMMICH_DB_USER}
+      POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD}
+      POSTGRES_DB_NAME: ${IMMICH_DB_NAME}
     volumes:
       - ${DATA_ROOT}/immich/postgres:/var/lib/postgresql/data
     networks:

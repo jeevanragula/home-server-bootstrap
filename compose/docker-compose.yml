@@ -1,0 +1,89 @@
+version: "3.9"
+
+networks:
+  homeserver:
+    driver: bridge
+
+services:
+  # -------------------
+  # IMMICH
+  # -------------------
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich_server
+    command: ["start.sh", "immich"]
+    env_file:
+      - immich.env
+    volumes:
+      - ${DATA_ROOT}/immich/library:/usr/src/app/upload
+    ports:
+      - "2283:3001"
+    depends_on:
+      - immich-redis
+      - immich-postgres
+    networks:
+      - homeserver
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  immich-microservices:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich_microservices
+    command: ["start.sh", "microservices"]
+    env_file:
+      - immich.env
+    volumes:
+      - ${DATA_ROOT}/immich/library:/usr/src/app/upload
+    depends_on:
+      - immich-redis
+      - immich-postgres
+    networks:
+      - homeserver
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  immich-redis:
+    image: redis:7
+    container_name: immich_redis
+    networks:
+      - homeserver
+    restart: unless-stopped
+
+  immich-postgres:
+    image: postgres:14
+    container_name: immich_postgres
+    env_file:
+      - immich.env
+    volumes:
+      - ${DATA_ROOT}/immich/postgres:/var/lib/postgresql/data
+    networks:
+      - homeserver
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+
+  # -------------------
+  # HOME ASSISTANT
+  # -------------------
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    env_file:
+      - homeassistant.env
+    volumes:
+      - ${DATA_ROOT}/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8123:8123"
+    networks:
+      - homeserver
+    restart: unless-stopped

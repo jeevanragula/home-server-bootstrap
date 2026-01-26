@@ -38,7 +38,7 @@ services:
     env_file:
       - secrets.env
     environment:
-      DB_USERNAME: ${IMMICH_DB_USER}
+      DB_USERNAME: ${IMMICH_DB_USERNAME}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD}
       DB_DATABASE_NAME: ${IMMICH_DB_NAME}
     volumes:
@@ -67,7 +67,7 @@ services:
     env_file:
       - secrets.env
     environment:
-      POSTGRES_USER: ${IMMICH_DB_USER}
+      POSTGRES_USER: ${IMMICH_DB_USERNAME}
       POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD}
       POSTGRES_DB_NAME: ${IMMICH_DB_NAME}
     volumes:

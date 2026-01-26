@@ -22,7 +22,7 @@ services:
     ports:
       - "2283:3001"
     depends_on:
-      - immich-redis
+      - redis
       - database
     networks:
       - homeserver
@@ -46,7 +46,7 @@ services:
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     depends_on:
-      - immich-redis
+      - redis
       - database
     networks:
       - homeserver

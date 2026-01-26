@@ -16,6 +16,7 @@ services:
       DB_USERNAME: ${IMMICH_DB_USERNAME}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD}
       DB_DATABASE_NAME: ${IMMICH_DB_NAME}
+      DB_HOSTNAME: database
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     ports:
@@ -41,6 +42,7 @@ services:
       DB_USERNAME: ${IMMICH_DB_USERNAME}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD}
       DB_DATABASE_NAME: ${IMMICH_DB_NAME}
+      DB_HOSTNAME: database
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     depends_on:
@@ -61,7 +63,7 @@ services:
       - homeserver
     restart: unless-stopped
 
-  immich-postgres:
+  database:
     image: postgres:14
     container_name: immich_postgres
     env_file:
@@ -69,7 +71,7 @@ services:
     environment:
       POSTGRES_USER: ${IMMICH_DB_USERNAME}
       POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD}
-      POSTGRES_DB_NAME: ${IMMICH_DB_NAME}
+      POSTGRES_DB: ${IMMICH_DB_NAME}
     volumes:
       - ${DATA_ROOT}/immich/postgres:/var/lib/postgresql/data
     networks:

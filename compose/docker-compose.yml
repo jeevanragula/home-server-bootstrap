@@ -20,7 +20,7 @@ services:
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     ports:
-      - "2283:3001"
+      - "2283:2283"
     depends_on:
       - redis
       - database

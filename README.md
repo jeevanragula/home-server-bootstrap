@@ -1,137 +1,45 @@
 # Home Server Bootstrap
 
-Simple Ubuntu Server home server for an old Dell laptop.
+## Fresh Ubuntu Server
 
-## Purpose
+After installing Ubuntu Server:
 
-- Immich for phone photo backup
-- Home Assistant for home automation
-- Docker Compose for service management
-- Tailscale for remote/private access
-- Internal HDD for live application data
-- Portable exFAT SSD for offline backups
-
-The SSD is **backup-only**. The bootstrap script never formats, mounts, or writes to it.
-
-## Repository layout
-
-```
-.
-├── compose/
-│   ├── docker-compose.yml
-│   └── secrets.example
-├── scripts/
-│   ├── up.sh
-│   ├── down.sh
-│   ├── backup-to-ssd.sh
-│   └── unmount-backup.sh
-├── .env.example
-├── .gitignore
-└── install.sh
-```
-
-## First-time setup
-
-```bash
+\`\`\`bash
 git clone https://github.com/jeevanragula/home-server-bootstrap.git ~/home-server-bootstrap
 cd ~/home-server-bootstrap
+sudo bash setup.sh
+\`\`\`
 
-cp .env.example .env
-cp compose/secrets.example compose/secrets.env
-nano compose/secrets.env
+**That is the only setup command.**
 
-sudo ./install.sh
-```
+It installs Docker, Tailscale, required packages, power settings and firewall rules, creates live storage under \`/srv/docker\`, generates the Immich DB secret, and starts Immich + Home Assistant.
 
-Log out and SSH back in so the Docker group membership is refreshed.
+If Tailscale needs authentication, run \`sudo tailscale up\` once.
 
-Start the services:
+Open Immich on port 2283 and Home Assistant on port 8123, then create their admin accounts in the web UIs.
 
-```bash
-./scripts/up.sh
-```
+## Photo backup
 
-Then create the first administrator account through the Immich and Home Assistant web UIs. Application users/passwords are **not** managed by Compose.
+Keep the portable exFAT SSD disconnected normally.
 
-## Normal operation
+When connected, run:
 
-```bash
-./scripts/up.sh
-./scripts/down.sh
-```
-
-Pulling the repository does not overwrite `.env` or `compose/secrets.env`; both are ignored by Git.
-
-## SSD backup workflow
-
-The SSD should remain disconnected except during backup.
-
-1. Connect the exFAT SSD.
-2. Identify it carefully:
-
-```bash
-lsblk -f
-```
-
-3. Mount the correct SSD partition:
-
-```bash
-sudo mkdir -p /mnt/home-server-backup
-sudo mount /dev/sdX1 /mnt/home-server-backup
-```
-
-**Never guess /dev/sdX1. Verify it with `lsblk -f`.**
-
-4. Run:
-
-```bash
+\`\`\`bash
 ./scripts/backup-to-ssd.sh
-```
+\`\`\`
 
-The backup contains:
+The script automatically finds exactly one exFAT filesystem, mounts it, incrementally backs up the Immich library, creates an Immich PostgreSQL dump and timestamped Home Assistant archive, syncs everything, and safely unmounts the SSD.
 
-- Immich photos/library files
-- A consistent PostgreSQL dump of the Immich database
-- A timestamped Home Assistant configuration archive
+If multiple exFAT disks are connected, it refuses to guess.
 
-The backup script deliberately does **not** copy the live PostgreSQL data directory to exFAT. PostgreSQL data should be backed up with `pg_dump`.
+The backup does not use \`--delete\`, so deleted live photos remain on the offline backup.
 
-5. Safely unmount:
+## Live storage
 
-```bash
-./scripts/unmount-backup.sh
-```
-
-Then unplug the SSD.
-
-## What is backed up
-
-Live data:
-
-```
+\`\`\`
 /srv/docker/immich/library
 /srv/docker/immich/postgres
 /srv/docker/homeassistant
-```
+\`\`\`
 
-Backup:
-
-```
-SSD:/home-server-backup/photos/
-/home-server-backup/database/immich.sql.gz
-/home-server-backup/homeassistant/
-```
-
-Docker images and containers are not backed up because they can be recreated from the Compose file.
-
-## Security model
-
-- No application passwords are committed to Git.
-- Tailscale provides remote private access.
-- Docker services use an internal bridge network.
-- The SSD is normally offline, reducing exposure to accidental deletion/ransomware.
-- SSH should be hardened to Tailscale-only only after Tailscale access has been tested.
-
-## Important
-
-Do not manually rename, move, or delete files inside the live Immich library. Use Immich for photo management and this backup workflow for copies.
+The portable SSD is never formatted by this repository.

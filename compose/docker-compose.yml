@@ -60,3 +60,29 @@ services:
     networks:
       - homeserver
     restart: unless-stopped
+
+  adguardhome:
+    image: adguard/adguardhome:v0.107.79
+    container_name: adguardhome
+    volumes:
+      - ${DATA_ROOT}/adguard/work:/opt/adguardhome/work
+      - ${DATA_ROOT}/adguard/conf:/opt/adguardhome/conf
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3000:3000/tcp"
+    networks:
+      - homeserver
+    restart: unless-stopped
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${DATA_ROOT}/dozzle:/data
+    ports:
+      - "8080:8080"
+    networks:
+      - homeserver
+    restart: unless-stopped

@@ -58,7 +58,7 @@ echo "  sudo tailscale up"
 echo
 
 # Laptop server power behavior
-mkdir -p /etc/systemd
+mkdir -p /etc/systemd/logind.conf.d
 cat >/etc/systemd/logind.conf.d/home-server.conf <<'EOF'
 [Login]
 HandleLidSwitch=ignore

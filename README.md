@@ -136,6 +136,24 @@ Dozzle persistent data is stored under:
 
 Tailscale runs directly on Ubuntu as a system service rather than inside Docker. This allows remote access without exposing the services directly to the public Internet.
 
+Validate the server's Tailscale installation and connection at any time:
+
+```bash
+cd ~/home-server-bootstrap
+sudo bash ./scripts/check-tailscale.sh
+```
+
+The check verifies that:
+
+- Tailscale is installed.
+- `tailscaled` is running.
+- The server is authenticated and connected.
+- A Tailscale IPv4 address is assigned.
+- The `tailscale0` interface exists.
+- Tailscale network diagnostics can run.
+
+The validation script is **read-only** and does not change Tailscale configuration.
+
 ## 4. Live storage
 
 All persistent application data is stored under:
@@ -163,7 +181,7 @@ cd ~/home-server-bootstrap
 
 The script:
 
-1. Finds exactly one exFAT filesystem.
+1. Finds exactly one existing exFAT filesystem.
 2. Mounts the SSD.
 3. Creates the `homeserver/` directory if required.
 4. Copies `.env`.
@@ -196,8 +214,11 @@ It:
 - does **not** delete files from the SSD
 - keeps photos that were later deleted from the server
 - incrementally copies the photo library instead of creating duplicate snapshot directories
-- does not format the SSD
+- does **not** format, partition, wipe, or initialize the SSD
 - refuses to guess if multiple exFAT disks are connected
+- fails safely if no suitable existing exFAT filesystem is found
+
+**Important:** No script in this repository formats or initializes the portable SSD. The SSD must be prepared separately, outside this repository, before it is used for backups.
 
 Database and Home Assistant backups are refreshed on each backup run.
 
@@ -227,6 +248,12 @@ Stop services:
 ./scripts/down.sh
 ```
 
+Validate Tailscale:
+
+```bash
+sudo bash ./scripts/check-tailscale.sh
+```
+
 Run an offline SSD backup:
 
 ```bash
@@ -241,7 +268,7 @@ Unmount the backup SSD manually if necessary:
 
 ## 8. Important notes
 
-- The portable SSD is **never formatted** by this repository.
+- The portable SSD is **never formatted, partitioned, wiped, or initialized** by this repository.
 - Keep the SSD disconnected when it is not being used for backup.
 - Keep a separate secure copy of `.env` in your password manager.
 - Do not commit `.env` to Git.

@@ -78,6 +78,7 @@ if df -P /srv/docker >/dev/null 2>&1; then
     if (( AVAILABLE_KB < 10485760 )); then
       echo "[WARN] Less than 10 GB is available on the Docker filesystem."
     fi
+  fi
 else
   echo "[WARN] /srv/docker does not exist yet; Docker will create it during setup."
 fi

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Tailscale validation"
-echo "===================="
+echo "Tailscale and network validation"
+echo "================================"
 
 if ! command -v tailscale >/dev/null 2>&1; then
   echo "[FAIL] Tailscale is not installed."
@@ -63,7 +63,35 @@ echo "Tailscale network check:"
 sudo tailscale netcheck
 
 echo
-echo "[PASS] Tailscale is installed, running, authenticated, and has an active VPN interface."
+echo "Internet connectivity:"
+if curl -fsS --connect-timeout 5 --max-time 10 -o /dev/null https://www.cloudflare.com/cdn-cgi/trace; then
+  echo "[OK] HTTPS internet connectivity is working."
+else
+  echo "[FAIL] HTTPS internet connectivity check failed."
+fi
+
+echo
+echo "Internet download speed (quick test):"
+echo "Downloading 10 MB from Cloudflare; this consumes approximately 10 MB of data."
+SPEED_RESULT="$(curl -L -sS -o /dev/null \
+  --connect-timeout 10 --max-time 30 \
+  -w '%{speed_download} %{time_total}' \
+  'https://speed.cloudflare.com/__down?bytes=10000000' 2>/dev/null || true)"
+
+if [[ -n "$SPEED_RESULT" ]]; then
+  read -r BYTES_PER_SEC ELAPSED <<<"$SPEED_RESULT"
+  if [[ "$BYTES_PER_SEC" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk "BEGIN { exit !($BYTES_PER_SEC > 0) }"; then
+    SPEED_MBPS="$(awk "BEGIN { printf \"%.1f\", ($BYTES_PER_SEC * 8) / 1000000 }")"
+    echo "[OK] Approximate download speed: ${SPEED_MBPS} Mbps (${ELAPSED}s)"
+  else
+    echo "[FAIL] Could not calculate download speed."
+  fi
+else
+  echo "[FAIL] Internet speed test failed or timed out."
+fi
+
+echo
+echo "[PASS] Tailscale and network validation completed."
 echo
 echo "SSH by machine name:"
 echo "  ssh <ubuntu-user>@$(hostname)"

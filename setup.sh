@@ -19,6 +19,10 @@ EOF
   chmod 600 "$ROOT_DIR/compose/secrets.env"
 fi
 bash "$ROOT_DIR/install.sh"
+if ! tailscale ip -4 >/dev/null 2>&1; then
+  echo "Authenticate Tailscale using the URL shown below:"
+  tailscale up
+fi
 docker compose --env-file "$ROOT_DIR/.env" --env-file "$ROOT_DIR/compose/secrets.env" -f "$ROOT_DIR/compose/docker-compose.yml" up -d
 chmod +x "$ROOT_DIR"/scripts/*.sh "$ROOT_DIR"/install.sh
 echo

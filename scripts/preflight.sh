@@ -41,6 +41,8 @@ for host in registry-1.docker.io ghcr.io; do
     echo "[FAIL] DNS cannot resolve $host"
     fail=1
   fi
+done
+  fi
 
 echo
 echo "3. Container registries"

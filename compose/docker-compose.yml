@@ -4,49 +4,41 @@ networks:
 
 services:
   immich-server:
-    image: ghcr.io/immich-app/immich-server:release
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION}
     container_name: immich_server
-    command: ["start.sh", "immich"]
     environment:
       DB_USERNAME: ${IMMICH_DB_USERNAME}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD}
       DB_DATABASE_NAME: ${IMMICH_DB_NAME}
       DB_HOSTNAME: database
+      REDIS_HOSTNAME: redis
+      REDIS_PORT: 6379
     volumes:
-      - ${DATA_ROOT}/immich/library:/usr/src/app/upload
+      - ${DATA_ROOT}/immich/library:/data
+      - /etc/localtime:/etc/localtime:ro
     ports:
-      - "2283:3001"
-    depends_on: [redis, database]
-    networks: [homeserver]
+      - "2283:2283"
+    depends_on:
+      - redis
+      - database
+    networks:
+      - homeserver
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1g
 
-  immich-microservices:
-    image: ghcr.io/immich-app/immich-server:release
-    container_name: immich_microservices
-    command: ["start.sh", "microservices"]
-    environment:
-      DB_USERNAME: ${IMMICH_DB_USERNAME}
-      DB_PASSWORD: ${IMMICH_DB_PASSWORD}
-      DB_DATABASE_NAME: ${IMMICH_DB_NAME}
-      DB_HOSTNAME: database
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}
+    container_name: immich_machine_learning
     volumes:
-      - ${DATA_ROOT}/immich/library:/usr/src/app/upload
-    depends_on: [redis, database]
-    networks: [homeserver]
+      - ${DATA_ROOT}/immich/model-cache:/cache
+    networks:
+      - homeserver
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1g
 
   redis:
-    image: redis:7
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
     container_name: immich_redis
-    networks: [homeserver]
+    networks:
+      - homeserver
     restart: unless-stopped
 
   database:
@@ -56,14 +48,13 @@ services:
       POSTGRES_USER: ${IMMICH_DB_USERNAME}
       POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD}
       POSTGRES_DB: ${IMMICH_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
       - ${DATA_ROOT}/immich/postgres:/var/lib/postgresql/data
-    networks: [homeserver]
+    networks:
+      - homeserver
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512m
+    shm_size: 128mb
 
   homeassistant:
     image: ghcr.io/home-assistant/home-assistant:stable
@@ -75,5 +66,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "8123:8123"
-    networks: [homeserver]
+    networks:
+      - homeserver
     restart: unless-stopped

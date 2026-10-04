@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="$ROOT_DIR/.env"
+COMPOSE_FILE="$ROOT_DIR/compose/docker-compose.yml"
+
 echo "Home Server preflight"
 echo "====================="
 
@@ -11,9 +15,9 @@ check_url() {
   local url="$2"
   local http_code
 
-  # /v2/ commonly returns 401/403 when the registry is reachable and authentication is required.
+  # Registry /v2/ commonly returns 401/403 when reachable and authentication is required.
   # Use IPv4 GET so broken IPv6 or HEAD handling does not cause false failures.
-  http_code="$(curl -4 -sS -o /dev/null --connect-timeout 10 --max-time 15 -w "%{http_code}" "$url" 2>/dev/null || true)"
+  http_code="$(curl -4 -sS -o /dev/null --connect-timeout 10 --max-time 15 -w '%{http_code}' "$url" 2>/dev/null || true)"
 
   if [[ "$http_code" =~ ^(2[0-9][0-9]|3[0-9][0-9]|401|403)$ ]]; then
     echo "[OK] $name reachable (HTTP $http_code)"
@@ -42,6 +46,7 @@ for host in registry-1.docker.io ghcr.io; do
     fail=1
   fi
 done
+
 echo
 echo "3. Container registries"
 check_url "Docker Hub registry" "https://registry-1.docker.io/v2/"
@@ -71,7 +76,30 @@ else
 fi
 
 echo
-echo "6. Disk space"
+echo "6. Compose and actual image pull"
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "[FAIL] .env not found: $ENV_FILE"
+  fail=1
+elif [[ ! -f "$COMPOSE_FILE" ]]; then
+  echo "[FAIL] Compose file not found: $COMPOSE_FILE"
+  fail=1
+elif ! docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config --quiet; then
+  echo "[FAIL] Docker Compose configuration is invalid."
+  fail=1
+else
+  echo "[OK] Docker Compose configuration is valid."
+  echo "[INFO] Pulling all required images now."
+  echo "[INFO] This is the real image-transfer test; successful pulls are cached for setup."
+  if docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull; then
+    echo "[OK] All required container images pulled successfully."
+  else
+    echo "[FAIL] One or more container image pulls failed."
+    fail=1
+  fi
+fi
+
+echo
+echo "7. Disk space"
 if df -P /srv/docker >/dev/null 2>&1; then
   AVAILABLE_KB="$(df -Pk /srv/docker | awk 'NR==2 {print $4}')"
   if [[ "$AVAILABLE_KB" =~ ^[0-9]+$ ]]; then

@@ -41,6 +41,20 @@ fi
 echo "[OK] tailscale0 interface exists."
 
 echo
+echo "Tailscale identity:"
+sudo tailscale status --self=false 2>/dev/null | head -n 1 || true
+
+echo
+echo "DNS / MagicDNS:"
+DNS_STATUS="$(sudo tailscale dns status 2>&1 || true)"
+if grep -qiE "magicdns|nameserver|search domain|dns" <<<"$DNS_STATUS"; then
+  echo "$DNS_STATUS"
+else
+  echo "[INFO] Could not determine MagicDNS status from this client."
+  echo "       Check MagicDNS in the Tailscale admin console."
+fi
+
+echo
 echo "Tailscale status:"
 sudo tailscale status
 
@@ -50,3 +64,6 @@ sudo tailscale netcheck
 
 echo
 echo "[PASS] Tailscale is installed, running, authenticated, and has an active VPN interface."
+echo
+echo "SSH by machine name:"
+echo "  ssh <ubuntu-user>@$(hostname)"

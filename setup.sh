@@ -19,6 +19,9 @@ EOF
   chmod 600 "$ROOT_DIR/compose/secrets.env"
 fi
 bash "$ROOT_DIR/install.sh"
+
+# Ensure closing the laptop lid does not suspend or shut down the server.
+bash "$ROOT_DIR/scripts/configure-lid.sh"
 if ! tailscale ip -4 >/dev/null 2>&1; then
   echo "Authenticate Tailscale using the URL shown below:"
   tailscale up

@@ -37,8 +37,10 @@ echo "2. DNS resolution"
 for host in registry-1.docker.io ghcr.io; do
   if getent hosts "$host" >/dev/null 2>&1; then
     echo "[OK] DNS resolves $host"
+  else
     echo "[FAIL] DNS cannot resolve $host"
-done
+    fail=1
+  fi
 
 echo
 echo "3. Container registries"

@@ -34,7 +34,7 @@ if ! tailscale ip -4 >/dev/null 2>&1; then
 fi
 
 echo
-echo "Running preflight checks before pulling Docker images..."
+echo "Running preflight checks and verifying all Docker image pulls..."
 bash "$ROOT_DIR/scripts/preflight.sh"
 
 docker compose --env-file "$ROOT_DIR/.env" -f "$ROOT_DIR/compose/docker-compose.yml" up -d

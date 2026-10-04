@@ -1,8 +1,22 @@
 # Home Server Bootstrap
 
-## Fresh Ubuntu Server
+Simple, reproducible setup for an old laptop running **Ubuntu Server 24.04 LTS**.
 
-Clone the repository, create your one local configuration file, set your passwords, then run setup:
+The server runs:
+
+- **Immich** — family photo backup and browsing
+- **Home Assistant** — home automation
+- **Docker Compose** — service management
+- **Tailscale** — private remote access
+- **UFW** — basic firewall protection
+
+The internal laptop storage is the live storage. A portable **1 TB exFAT SSD** is used only as an offline backup.
+
+## 1. Fresh Ubuntu installation
+
+Install Ubuntu Server 24.04 LTS and enable **OpenSSH Server** during installation.
+
+After logging in:
 
 ```bash
 git clone https://github.com/jeevanragula/home-server-bootstrap.git ~/home-server-bootstrap
@@ -12,30 +26,183 @@ nano .env
 sudo bash setup.sh
 ```
 
-The only persistent configuration file is `.env`. It contains server settings and service passwords and is ignored by Git. Keep a copy in your password manager or another secure location for disaster recovery.
+After `.env` has been configured, `sudo bash setup.sh` is the only setup command required.
 
-`setup.sh` installs Docker, Tailscale, required packages, power settings and firewall rules, creates live storage under `/srv/docker`, configures the laptop lid, authenticates Tailscale if needed, and starts Immich + Home Assistant.
+On the first run, Tailscale may open an authentication flow. Authenticate the server with your Tailscale account and then allow the setup to continue.
 
-Immich uses port `2283` and Home Assistant uses port `8123`.
+## 2. Configuration
 
-## Photo backup
+All local configuration is kept in **one file**:
 
-Keep the portable exFAT SSD disconnected normally. When connected, run:
+```text
+.env
+```
+
+It contains:
+
+- Server paths
+- Time zone
+- Immich PostgreSQL credentials
+- Immich version
+- Backup SSD paths
+
+The file is ignored by Git and must never be committed.
+
+Keep a secure copy of `.env` in your password manager. The backup script also copies it to the offline SSD for disaster recovery.
+
+Example:
+
+```env
+DATA_ROOT=/srv/docker
+TZ=Asia/Kolkata
+
+IMMICH_DB_USERNAME=immich
+IMMICH_DB_PASSWORD=your-long-password
+IMMICH_DB_NAME=immich
+
+IMMICH_VERSION=v3.2.2
+
+BACKUP_MOUNT=/mnt/home-server-backup
+BACKUP_ROOT=/mnt/home-server-backup/homeserver
+```
+
+## 3. Services
+
+### Immich
+
+Immich is exposed on:
+
+```text
+http://<server-ip>:2283
+```
+
+The deployment includes:
+
+- Immich Server
+- PostgreSQL with VectorChord/pgvector support
+- Valkey
+
+**Immich machine learning is intentionally disabled** to keep CPU and RAM usage low on the old laptop. Face recognition and other ML-dependent features are therefore unavailable.
+
+### Home Assistant
+
+Home Assistant is exposed on:
+
+```text
+http://<server-ip>:8123
+```
+
+### Tailscale
+
+Tailscale runs directly on Ubuntu as a system service rather than inside Docker. This allows remote access without exposing the services directly to the public Internet.
+
+## 4. Live storage
+
+All persistent application data is stored under:
+
+```text
+/srv/docker/
+├── immich/
+│   ├── library/
+│   └── postgres/
+└── homeassistant/
+```
+
+Do not manually move or rename files inside the Immich library while Immich is running. Use the Immich application for photo management.
+
+## 5. Offline SSD backup
+
+Keep the portable SSD disconnected during normal operation.
+
+Connect it only when you want to perform a backup:
+
+```bash
+cd ~/home-server-bootstrap
+./scripts/backup-to-ssd.sh
+```
+
+The script:
+
+1. Finds exactly one exFAT filesystem.
+2. Mounts the SSD.
+3. Creates the `homeserver/` directory if required.
+4. Copies `.env`.
+5. Incrementally copies the Immich photo library.
+6. Creates an Immich PostgreSQL dump.
+7. Archives the Home Assistant configuration.
+8. Syncs the filesystem.
+9. Safely unmounts the SSD.
+
+### SSD layout
+
+```text
+SSD/
+└── homeserver/
+    ├── .env
+    ├── photos/
+    ├── database/
+    │   └── immich.sql.gz
+    └── homeassistant/
+        └── homeassistant.tar.gz
+```
+
+### Backup safety
+
+The backup script is intentionally **non-destructive**.
+
+It:
+
+- does **not** use `rsync --delete`
+- does **not** delete files from the SSD
+- keeps photos that were later deleted from the server
+- incrementally copies the photo library instead of creating duplicate snapshot directories
+- does not format the SSD
+- refuses to guess if multiple exFAT disks are connected
+
+Database and Home Assistant backups are refreshed on each backup run.
+
+## 6. Disaster recovery
+
+If the laptop fails:
+
+1. Install Ubuntu Server 24.04 LTS.
+2. Clone this repository.
+3. Restore the backed-up `.env`.
+4. Run `setup.sh`.
+5. Restore the Immich database and application data from the SSD.
+
+The SSD contains both the application configuration and the data required for recovery.
+
+## 7. Useful commands
+
+Start or update services:
+
+```bash
+./scripts/up.sh
+```
+
+Stop services:
+
+```bash
+./scripts/down.sh
+```
+
+Run an offline SSD backup:
 
 ```bash
 ./scripts/backup-to-ssd.sh
 ```
 
-The script automatically finds exactly one exFAT filesystem, mounts it, and backs up into the single configured `homeserver/` directory. Photo backup is incremental, so existing files are reused and only new/changed files are copied. It never uses `--delete`, so files removed from the live server remain on the SSD. If multiple exFAT disks are connected, it refuses to guess.
+Unmount the backup SSD manually if necessary:
 
-The SSD also receives a copy of `.env`, which is needed for disaster recovery. Keep the primary `.env` in your password manager as well. The database and Home Assistant backups are refreshed on each run; the script never deletes files from the SSD.
-
-## Live storage
-
-```text
-/srv/docker/immich/library
-/srv/docker/immich/postgres
-/srv/docker/homeassistant
+```bash
+./scripts/unmount-backup.sh
 ```
 
-The portable SSD is never formatted by this repository.
+## 8. Important notes
+
+- The portable SSD is **never formatted** by this repository.
+- Keep the SSD disconnected when it is not being used for backup.
+- Keep a separate secure copy of `.env` in your password manager.
+- Do not commit `.env` to Git.
+- Do not manually modify the Immich library while Immich is running.

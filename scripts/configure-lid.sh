@@ -25,10 +25,8 @@ EOF
 echo "[OK] Lid-close configuration written: $CONFIG_FILE"
 cat "$CONFIG_FILE"
 
-echo "[INFO] Applying systemd-logind configuration..."
-systemctl restart systemd-logind
-echo "[OK] systemd-logind restarted."
+echo "[INFO] Configuration will take effect after the next reboot."
 
 echo "[SUCCESS] Laptop lid is configured to be ignored."
-echo "[SUCCESS] Closing the lid will NOT trigger suspend, hibernate, or shutdown."
+echo "[SUCCESS] After reboot, closing the lid will NOT trigger suspend, hibernate, or shutdown."
 echo "========================================"

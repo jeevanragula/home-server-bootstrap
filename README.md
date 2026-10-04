@@ -8,6 +8,8 @@ The server runs:
 - **Home Assistant** — home automation
 - **Docker Compose** — service management
 - **Tailscale** — private remote access
+- **AdGuard Home** — network-wide DNS ad/tracker blocking
+- **Dozzle** — Docker log viewer
 - **UFW** — basic firewall protection
 
 The internal laptop storage is the live storage. A portable **1 TB exFAT SSD** is used only as an offline backup.
@@ -90,6 +92,44 @@ Home Assistant is exposed on:
 
 ```text
 http://<server-ip>:8123
+```
+
+### AdGuard Home
+
+AdGuard Home provides network-wide DNS filtering for your home devices.
+
+Initial setup:
+
+```text
+http://<server-ip>:3000
+```
+
+After the first-run wizard, configure your home router's DNS server to use the home server's LAN IP.
+
+AdGuard's DNS service listens on port `53`. DHCP is intentionally **not** enabled; let your existing router continue providing DHCP.
+
+AdGuard persistent data is stored under:
+
+```text
+/srv/docker/adguard/
+├── work/
+└── conf/
+```
+
+### Dozzle
+
+Dozzle provides a lightweight browser UI for viewing Docker container logs:
+
+```text
+http://<server-ip>:8080
+```
+
+It has read-only access to the Docker socket. Container actions and shell access are intentionally disabled.
+
+Dozzle persistent data is stored under:
+
+```text
+/srv/docker/dozzle/
 ```
 
 ### Tailscale

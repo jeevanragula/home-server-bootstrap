@@ -26,9 +26,9 @@ Keep the portable exFAT SSD disconnected normally. When connected, run:
 ./scripts/backup-to-ssd.sh
 ```
 
-The script automatically finds exactly one exFAT filesystem, mounts it, incrementally backs up the Immich library, creates an Immich PostgreSQL dump and timestamped Home Assistant archive, syncs everything, and safely unmounts the SSD. If multiple exFAT disks are connected, it refuses to guess.
+The script automatically finds exactly one exFAT filesystem, mounts it, creates a completely new timestamped snapshot directory containing the Immich library, PostgreSQL dump and Home Assistant archive, then safely unmounts the SSD. Every run writes to a fresh directory; it never deletes, synchronizes with deletion, or overwrites an older backup. If multiple exFAT disks are connected, it refuses to guess.
 
-The backup does not use `--delete`, so deleted live photos remain on the offline backup.
+Backups are append-only from this script's perspective. It never uses `--delete`, never removes old snapshots, and never writes into an existing snapshot. This means old backups remain available for recovery, at the cost of additional SSD space on each run.
 
 ## Live storage
 

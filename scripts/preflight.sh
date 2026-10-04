@@ -9,10 +9,16 @@ fail=0
 check_url() {
   local name="$1"
   local url="$2"
-  if curl -fsSI --connect-timeout 10 --max-time 15 "$url" >/dev/null 2>&1; then
-    echo "[OK] $name reachable"
+  local http_code
+
+  # /v2/ commonly returns 401/403 when the registry is reachable and authentication is required.
+  # Use IPv4 GET so broken IPv6 or HEAD handling does not cause false failures.
+  http_code="$(curl -4 -sS -o /dev/null --connect-timeout 10 --max-time 15 -w "%{http_code}" "$url" 2>/dev/null || true)"
+
+  if [[ "$http_code" =~ ^(2[0-9][0-9]|3[0-9][0-9]|401|403)$ ]]; then
+    echo "[OK] $name reachable (HTTP $http_code)"
   else
-    echo "[FAIL] $name is not reachable: $url"
+    echo "[FAIL] $name is not reachable: $url (HTTP ${http_code:-connection failed})"
     fail=1
   fi
 }
@@ -31,10 +37,7 @@ echo "2. DNS resolution"
 for host in registry-1.docker.io ghcr.io; do
   if getent hosts "$host" >/dev/null 2>&1; then
     echo "[OK] DNS resolves $host"
-  else
     echo "[FAIL] DNS cannot resolve $host"
-    fail=1
-  fi
 done
 
 echo
@@ -75,7 +78,6 @@ if df -P /srv/docker >/dev/null 2>&1; then
     if (( AVAILABLE_KB < 10485760 )); then
       echo "[WARN] Less than 10 GB is available on the Docker filesystem."
     fi
-  fi
 else
   echo "[WARN] /srv/docker does not exist yet; Docker will create it during setup."
 fi

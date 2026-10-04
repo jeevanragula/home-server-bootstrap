@@ -7,8 +7,6 @@ services:
     image: ghcr.io/immich-app/immich-server:release
     container_name: immich_server
     command: ["start.sh", "immich"]
-    env_file:
-      - secrets.env
     environment:
       DB_USERNAME: ${IMMICH_DB_USERNAME}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD}
@@ -18,11 +16,8 @@ services:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     ports:
       - "2283:3001"
-    depends_on:
-      - redis
-      - database
-    networks:
-      - homeserver
+    depends_on: [redis, database]
+    networks: [homeserver]
     restart: unless-stopped
     deploy:
       resources:
@@ -33,8 +28,6 @@ services:
     image: ghcr.io/immich-app/immich-server:release
     container_name: immich_microservices
     command: ["start.sh", "microservices"]
-    env_file:
-      - secrets.env
     environment:
       DB_USERNAME: ${IMMICH_DB_USERNAME}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD}
@@ -42,11 +35,8 @@ services:
       DB_HOSTNAME: database
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
-    depends_on:
-      - redis
-      - database
-    networks:
-      - homeserver
+    depends_on: [redis, database]
+    networks: [homeserver]
     restart: unless-stopped
     deploy:
       resources:
@@ -56,23 +46,19 @@ services:
   redis:
     image: redis:7
     container_name: immich_redis
-    networks:
-      - homeserver
+    networks: [homeserver]
     restart: unless-stopped
 
   database:
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
     container_name: immich_postgres
-    env_file:
-      - secrets.env
     environment:
       POSTGRES_USER: ${IMMICH_DB_USERNAME}
       POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD}
       POSTGRES_DB: ${IMMICH_DB_NAME}
     volumes:
       - ${DATA_ROOT}/immich/postgres:/var/lib/postgresql/data
-    networks:
-      - homeserver
+    networks: [homeserver]
     restart: unless-stopped
     deploy:
       resources:
@@ -89,6 +75,5 @@ services:
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "8123:8123"
-    networks:
-      - homeserver
+    networks: [homeserver]
     restart: unless-stopped

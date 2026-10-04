@@ -34,13 +34,18 @@ cleanup() { if [[ "$AUTO_MOUNTED" -eq 1 ]]; then sync || true; sudo umount "$MOU
 trap cleanup EXIT
 FSTYPE="$(findmnt -n -o FSTYPE "$MOUNT_POINT")"
 [[ "$FSTYPE" == "exfat" ]] || { echo "ERROR: Expected exfat, found $FSTYPE."; exit 1; }
-sudo mkdir -p "$BACKUP_ROOT/photos" "$BACKUP_ROOT/homeassistant" "$BACKUP_ROOT/database"
-echo "==> Backing up Immich photos..."
-sudo rsync -a --human-readable --info=progress2 "$DATA_ROOT/immich/library/" "$BACKUP_ROOT/photos/"
+sudo mkdir -p "$BACKUP_ROOT"
+SNAPSHOT_ROOT="$BACKUP_ROOT/snapshot-$(date +%Y%m%d-%H%M%S)-$"
+sudo mkdir -p "$SNAPSHOT_ROOT/photos" "$SNAPSHOT_ROOT/homeassistant" "$SNAPSHOT_ROOT/database"
+echo "==> Backing up Immich photos to a fresh snapshot..."
+# The SSD is append-only from this script's perspective: no delete/overwrite flags are used.
+# --whole-file is appropriate for a local SSD and avoids rsync's delta-transfer overhead.
+sudo rsync -a --whole-file --human-readable --info=progress2 "$DATA_ROOT/immich/library/" "$SNAPSHOT_ROOT/photos/"
 if ! sudo docker inspect -f "{{.State.Running}}" immich_postgres 2>/dev/null | grep -q true; then echo "ERROR: immich_postgres is not running."; exit 1; fi
 echo "==> Creating Immich database dump..."
-sudo sh -c "docker exec immich_postgres pg_dump -U \"$DB_USER\" -d \"$DB_NAME\" | gzip > \"$BACKUP_ROOT/database/immich.sql.gz\""
+sudo sh -c "docker exec immich_postgres pg_dump -U \"$DB_USER\" -d \"$DB_NAME\" | gzip > \"$SNAPSHOT_ROOT/database/immich.sql.gz\""
 echo "==> Backing up Home Assistant..."
-sudo tar -C "$DATA_ROOT" -czf "$BACKUP_ROOT/homeassistant/homeassistant-$(date +%Y%m%d-%H%M%S).tar.gz" homeassistant
+sudo tar -C "$DATA_ROOT" -czf "$SNAPSHOT_ROOT/homeassistant/homeassistant.tar.gz" homeassistant
 sync
-echo "Backup complete. SSD will be safely unmounted."
+echo "Backup complete. New snapshot: $SNAPSHOT_ROOT"
+echo "Existing SSD backups were not modified or removed. SSD will be safely unmounted."

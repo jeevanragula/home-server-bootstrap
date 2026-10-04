@@ -66,7 +66,7 @@ HandleLidSwitchExternalPower=ignore
 HandleLidSwitchDocked=ignore
 EOF
 
-systemctl restart systemd-logind || true
+echo "[OK] Lid-close policy written; it will take effect after the next reboot."
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 
 # Low-battery shutdown

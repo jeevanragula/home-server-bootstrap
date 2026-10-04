@@ -33,6 +33,19 @@ systemctl enable --now docker
 mkdir -p /srv/docker
 chown -R "$ADMIN_USER:$ADMIN_USER" /srv/docker
 
+# AdGuard Home needs to bind DNS port 53. Ubuntu's systemd-resolved
+# commonly listens on 127.0.0.53:53, which conflicts with the container.
+# Disable only the stub listener; keep systemd-resolved itself running.
+if systemctl is-active --quiet systemd-resolved 2>/dev/null; then
+  mkdir -p /etc/systemd/resolved.conf.d
+  cat >/etc/systemd/resolved.conf.d/home-server-adguard.conf <<'EOF'
+[Resolve]
+DNSStubListener=no
+EOF
+  systemctl restart systemd-resolved
+  echo "[OK] Disabled systemd-resolved DNS stub listener for AdGuard Home."
+fi
+
 # Tailscale
 if ! command -v tailscale >/dev/null 2>&1; then
   curl -fsSL https://tailscale.com/install.sh | sh

@@ -3,9 +3,6 @@ networks:
     driver: bridge
 
 services:
-  # -------------------
-  # IMMICH
-  # -------------------
   immich-server:
     image: ghcr.io/immich-app/immich-server:release
     container_name: immich_server
@@ -20,7 +17,7 @@ services:
     volumes:
       - ${DATA_ROOT}/immich/library:/usr/src/app/upload
     ports:
-      - "2283:2283"
+      - "2283:3001"
     depends_on:
       - redis
       - database
@@ -82,15 +79,11 @@ services:
         limits:
           memory: 512m
 
-
-  # -------------------
-  # HOME ASSISTANT
-  # -------------------
   homeassistant:
     image: ghcr.io/home-assistant/home-assistant:stable
     container_name: homeassistant
-    env_file:
-      - secrets.env
+    environment:
+      TZ: ${TZ}
     volumes:
       - ${DATA_ROOT}/homeassistant:/config
       - /etc/localtime:/etc/localtime:ro

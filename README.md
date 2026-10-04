@@ -8,7 +8,7 @@ Clone the repository, create your one local configuration file, set your passwor
 git clone https://github.com/jeevanragula/home-server-bootstrap.git ~/home-server-bootstrap
 cd ~/home-server-bootstrap
 cp .env.example .env
- nano .env
+nano .env
 sudo bash setup.sh
 ```
 
@@ -26,9 +26,9 @@ Keep the portable exFAT SSD disconnected normally. When connected, run:
 ./scripts/backup-to-ssd.sh
 ```
 
-The script automatically finds exactly one exFAT filesystem, mounts it, creates a completely new timestamped snapshot directory containing the Immich library, PostgreSQL dump and Home Assistant archive, then safely unmounts the SSD. Every run writes to a fresh directory; it never deletes, synchronizes with deletion, or overwrites an older backup. If multiple exFAT disks are connected, it refuses to guess.
+The script automatically finds exactly one exFAT filesystem, mounts it, and backs up into the single configured `homeserver/` directory. Photo backup is incremental, so existing files are reused and only new/changed files are copied. It never uses `--delete`, so files removed from the live server remain on the SSD. If multiple exFAT disks are connected, it refuses to guess.
 
-Backups are append-only from this script's perspective. It never uses `--delete`, never removes old snapshots, and never writes into an existing snapshot. This means old backups remain available for recovery, at the cost of additional SSD space on each run.
+The SSD also receives a copy of `.env`, which is needed for disaster recovery. Keep the primary `.env` in your password manager as well. The database and Home Assistant backups are refreshed on each run; the script never deletes files from the SSD.
 
 ## Live storage
 

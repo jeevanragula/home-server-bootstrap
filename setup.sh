@@ -14,8 +14,11 @@ if [[ ! -f "$ROOT_DIR/.env" ]]; then
   cp "$ROOT_DIR/.env.example" "$ROOT_DIR/.env"
   echo "Created .env from .env.example."
   echo "Edit .env and set your values, then run setup.sh again."
+  chmod 600 "$ROOT_DIR/.env"
   exit 1
 fi
+
+chmod 600 "$ROOT_DIR/.env"
 
 if grep -q "^IMMICH_DB_PASSWORD=CHANGE_ME_TO_YOUR_OWN_LONG_PASSWORD$" "$ROOT_DIR/.env"; then
   echo "ERROR: Set your own IMMICH_DB_PASSWORD in .env before running setup."

@@ -36,7 +36,7 @@ if [[ "$FSTYPE" != "exfat" ]]; then
   exit 1
 fi
 
-mkdir -p "$BACKUP_ROOT/photos" "$BACKUP_ROOT/homeassistant" "$BACKUP_ROOT/database"
+sudo mkdir -p "$BACKUP_ROOT/photos" "$BACKUP_ROOT/homeassistant" "$BACKUP_ROOT/database"
 
 echo "==> Backing up Immich photos..."
 sudo rsync -a --human-readable --info=progress2   "$DATA_ROOT/immich/library/"   "$BACKUP_ROOT/photos/"
@@ -44,10 +44,14 @@ sudo rsync -a --human-readable --info=progress2   "$DATA_ROOT/immich/library/"  
 echo "==> Creating consistent Immich database dump..."
 DB_USER="$(grep '^IMMICH_DB_USERNAME=' "$ROOT_DIR/compose/secrets.env" | cut -d= -f2-)"
 DB_NAME="$(grep '^IMMICH_DB_NAME=' "$ROOT_DIR/compose/secrets.env" | cut -d= -f2-)"
-sudo docker exec immich_postgres pg_dump   -U "$DB_USER"   -d "$DB_NAME"   | gzip > "$BACKUP_ROOT/database/immich.sql.gz"
+sudo sh -c "docker exec immich_postgres pg_dump -U '$DB_USER' -d '$DB_NAME' | gzip > '$BACKUP_ROOT/database/immich.sql.gz'"
 
 echo "==> Backing up Home Assistant configuration..."
 sudo tar -C "$DATA_ROOT" -czf   "$BACKUP_ROOT/homeassistant/homeassistant-$(date +%Y%m%d-%H%M%S).tar.gz"   homeassistant
 
 sync
+echo
 echo "Backup completed successfully."
+echo "Photos:         $BACKUP_ROOT/photos"
+echo "Immich DB dump: $BACKUP_ROOT/database/immich.sql.gz"
+echo "Home Assistant: $BACKUP_ROOT/homeassistant"

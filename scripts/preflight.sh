@@ -87,7 +87,7 @@ fi
 
 if (( fail != 0 )); then
   echo
-  echo "[FAIL] Preflight checks failed. Fix the reported issues before pulling images."
+  echo "[FAIL] Preflight checks failed. Fix the reported issues before starting services."
   exit 1
 fi
 

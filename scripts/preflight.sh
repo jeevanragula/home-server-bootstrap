@@ -42,8 +42,6 @@ for host in registry-1.docker.io ghcr.io; do
     fail=1
   fi
 done
-  fi
-
 echo
 echo "3. Container registries"
 check_url "Docker Hub registry" "https://registry-1.docker.io/v2/"

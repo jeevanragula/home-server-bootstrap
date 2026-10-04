@@ -19,7 +19,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 apt update
 apt upgrade -y
-apt install -y ca-certificates curl gnupg lsb-release ufw jq unzip rsync exfatprogs util-linux upower
+apt install -y ca-certificates curl gnupg lsb-release ufw jq unzip rsync exfatprogs util-linux upower openssl
 
 # Docker
 if ! command -v docker >/dev/null 2>&1; then

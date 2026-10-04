@@ -75,6 +75,10 @@ ufw allow in on tailscale0
 ufw allow from 192.168.0.0/16 to any port 22
 ufw allow from 192.168.0.0/16 to any port 2283
 ufw allow from 192.168.0.0/16 to any port 8123
+ufw allow from 192.168.0.0/16 to any port 3000
+ufw allow from 192.168.0.0/16 to any port 8080
+ufw allow from 192.168.0.0/16 to any port 53 proto tcp
+ufw allow from 192.168.0.0/16 to any port 53 proto udp
 ufw --force enable
 
 echo
